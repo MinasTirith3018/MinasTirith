@@ -1,0 +1,129 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 23 10:29:05 2022
+"""
+
+"""3-5.5 학습하기
+자동으로 의류를 분류하는 인공지는 프로그램 만들기
+책 204 페이지~224 페이지 - 인공신경망 이해를 위한  입력층, 은닉층, 출력층 """
+
+"""신경망 클래스 만들기 225p~ 230p."""
+#KERAS라는 오픈소스 신경망 라이브러리를 쓸 예정
+#신경망 모델 라이브러리를 쓰면 - Relu나 Sigmoid도 다 정의가 되어있다 
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.utils import plot_model
+import time
+
+"""
+1. 1.1데이터셋 불러오기
+1.2 데이터셋 전처리 - 픽셀값을 0~1 사이로 조정
+
+2.1 신경망모델 설계 (레이어와 노드 개수 설정)
+2.2 신경망모델 컴파일하기 (오차함수 최적화 설정)
+
+3.1 신경망모델 학습
+
+"""
+#1단계 CSV 파일 말고, keras 모듈에서 fashion_mnist 데이터 불러오기
+fashion_mnist=keras.datasets.fashion_mnist
+(train_images,train_labels),(test_images, test_labels) = fashion_mnist.load_data() #numpy 배열로 
+
+#10개의 레이블 이름은 class name 이라는 list를 만듦
+class_names = ['T-shirt/top', 'Trouser', 'Pullover',\
+                    'Dress', 'Coat', 'Sandal', 'Shirt',\
+                    'Sneaker', 'Bag','Ankle boot']
+for i in range(25):
+    plt.subplot(5,5, i+1) #10개의 세로줄(행), 10개의 가로칸(열)
+    j=i  #1번~9번 의류 말고도 다른 번호의 의류도 볼 수있게 변수 j를 따로 설정. j번부터 j+8번까지 의류를 볼 수있음.
+    plt.imshow(test_images[j].reshape(28,28),cmap='gray')
+    plt.title('Label{},{}'.format(test_labels[j],class_names[test_labels[j]]))
+    plt.grid(False)
+    plt.colorbar()    
+    
+plt.tight_layout()
+plt.show()
+
+test_images, train_images = test_images / 255.0, train_images /255.0 
+#pixel 값이 0에서 255까지니까 max값인 255로 나눔.
+
+
+
+"""입력층은 픽샐개수 784개, 은닉층 노드는 100개, 출력층 노드는 옷의 종류인 10개
+은닉층 -> 출력층 활성화 함수는 ReLU 함수
+출력층 활성화 함수는 SoftMax - 총합이 1이니까, SoftMAX함수는 각 옷의 종류를 나타낼 확률을 의미함"""
+
+"""신경망의 기본구성요소 layer 설정
+sequential - 층을 하나씩 쌓아 만드는 모델구조
+Dense - 신경망 레이어를 생성
+Flatten - 2차원 (28*28 픽셀) 이미지 포멧을 785 픽셀의 1차원 배열로 변환) """
+    
+##step1. 신경망모델 정의
+model = Sequential( [
+    Flatten(input_shape=(28,28)),
+    Dense(100,activation = 'relu'),#은닉 레이어 (층이 레이어!), 노드 100개, 활성화 relu
+    Dense(10, activation = 'softmax')
+    ])
+
+#모델 연결구조 출력 (시각화)
+plot_model(model, 'model.png', show_shapes=True)
+
+
+"""step2. Loss와 Optimazer를 통해서 신경망 모델의 학습환경 설정"""
+#Loss - 실제값과 예측값의 차이를 표현하는 지표
+#Loss 함수는 평균제곱근 오차 말고도, 여러 오차함수가 있음
+#경사하강법도 여러 함수가 있다 (optimzer 설정)
+
+model.compile(optimizer = 'adam',loss ='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+             
+"""step3. 모델 트레이닝"""
+#method가 fitepochs - 학습 횟수 (같은 학습데이터를 100번)
+start = time.time()
+history = model.fit(train_images, train_labels, epochs=100)
+stop=time.time()
+print('Time: ', stop-start) #203초걸림
+#32개씩 학습해서 가중치를 갱신 - 배치사이즈 Batch size 가 기본값이 32.
+# 6만개니까 1875번을 가중치 갱신. 이 1875번 하고나면 epoch 1
+
+
+"""step4. 정확도평가"""
+#model.evaluate로 평가
+#verbose - 테스트 진행율 표시 - 0은 무음, 2는 에포크당 보여줌
+test_loss, test_acc = model.evaluate(test_images,test_labels,verbose=2)
+print('test accuraty : ',test_acc)
+
+#overfitting - 과적합 - 머신러닝에서 학습이 너무 잘되서 training 데이터에서는 정확하지만, 실제 test 적용시 성능이 떨어짐
+
+#정확도, 손실 그래프 표현
+ax1=plt.subplot(2,1,1)
+plt.plot(history.history['accuracy'], label='training_accuracy')
+plt.legend()
+plt.xticks(visible=False) 
+
+plt.subplot(2,1,2, sharex=ax1) #x축 눈금 공유
+plt.xlabel('epoch')
+plt.plot(history.history['loss'], label='training_loss')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+
+#이미지 하나의 모델 결과 확인해보기
+
+"""step6. 훔련된 모델 이용해서 이미지 예측하기 model.predict(test_images)"""
+predictions = model.predict(test_images)
+
+k=150
+print(np.argmax(predictions[k])) #가장 큰 예측값을 가진 레이블 출력 
+print(class_names[np.argmax(predictions[k])])
+plt.imshow(test_images[k].reshape(28,28),cmap='gray')
+
+
