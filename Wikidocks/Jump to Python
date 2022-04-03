@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr  3 16:16:51 2022
+
+@author: SEORIUS
+"""
+class FourCal:
+    def setdata(self,first,second):
+        self.first=first
+        self.second=second
+
+
+a=FourCal()
+a.setdata(4,2) 
+#__init 을 추가하기 전에는, setdata에서 값을 넣어줘야한다
+
+
+
+class FourCal:
+    def __init__(self,first,second):
+        self.first = first
+        self.second = second
+    def setdata(self,first,second):
+        self.first=first
+        self.second=second
+    def add(self):
+        result=self.first+self.second
+        return result
+    def mul(self):
+        result=self.first-self.second
+        return result
+    def div(self):
+        result=self.first/self.second
+        return result
+
+
+a=FourCal(4,2)
+#_init을 추가하고나면 바로 class를 저장할 때에 값을 넣을 수 있다. 
+#__init__을 하면 객체가 자동으로 전달된다.
+
+
+class MoreFourCal(FourCal):
+    def pow(self):
+        result = self.first**self.second
+        return result
+
+c=MoreFourCal(4,2)
+c.pow()
+
+class SafeFourCal(FourCal):
+    def div(self):
+        if self.second==0: #나누는 값이 0이면 
+            return print("나눌 수 없습니다")
+        else:
+            return self.first/self.second
+
+a=SafeFourCal(4,0)
+a.div()
